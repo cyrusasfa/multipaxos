@@ -1,6 +1,4 @@
-
-%%% distributed algorithms, n.dulay 27 feb 17
-%%% coursework 2, paxos made moderately complex
+%%% Frederick Lindsey (fl1414) and Cyrus Vahidi (cv114)
 
 -module(server).
 -export([start/3]).
@@ -18,4 +16,3 @@ start(System, N_accounts, End_after) ->
   System ! {config, Replica, Acceptor, Leader},
 
   done.
-
