@@ -2,8 +2,8 @@
 %  DOCUMENT CONFIGURATION
 %------------------------------------------------------------------------------
 
-\documentclass[twoside, a4paper, titlepage]{article}
-\usepackage[landscape]{geometry}
+\documentclass[a4paper]{article}
+\usepackage[landscape, margin = 1in]{geometry}
 
 %------------------------------------------------------------------------------
 %  PACKAGES
@@ -21,7 +21,21 @@
 \usepackage{tabularx}
 
 \usepackage{tikz}
+\usepackage{environ}
 \restylefloat{figure}
+
+\makeatletter
+\newsavebox{\measure@tikzpicture}
+\NewEnviron{scaletikzpicturetowidth}[1]{%
+  \def\tikz@width{#1}%
+  \def\tikzscale{1}\begin{lrbox}{\measure@tikzpicture}%
+  \BODY
+  \end{lrbox}%
+  \pgfmathparse{#1/\wd\measure@tikzpicture}%
+  \edef\tikzscale{\pgfmathresult}%
+  \BODY
+}
+\makeatother
 
 \begin{document}
 
@@ -38,69 +52,48 @@
 
 %------------------------------------------------------------------------------
 
+Frederick Lindsey (fl1414) and Cyrus Vahidi (cv114)
+
 \begin{figure}[H]
   \centering
-  \begin{tikzpicture}[scale = 0.5, every node/.style={scale = 0.75}]
+  \begin{scaletikzpicturetowidth}{\textwidth}
+  \begin{tikzpicture}[scale = \tikzscale]
 
-  \node[align=center] at (0, 0) {System};
-  \draw (-2, 1) rectangle (2, -1);
+  % Whole system overview
 
-  \node[align=center] at (-10, -4) {Server};
-  \draw (-12, -3) rectangle ( -8, -5);
+  \node[above] at (0, 10) {System};
+  \draw (-20, -10) rectangle (20, 10);
 
-  \node[align=center] at (-10, -6) {Database};
+  % Client processes
 
-  \node[align=center] at ( -5, -4) {Server};
-  \draw ( -7, -3) rectangle ( -3, -5);
+  \node[align=center] at (-18, 7) {Client};
+  \draw (-19, 6) rectangle (-17, 8);
 
-  \node[align=center] at ( -5, -6) {Database};
+  \node[align=center] at (-18, 0) {Client};
+  \draw (-19, -1) rectangle (-17, 1);
 
-  \node[align=center] at (  0, -4) {Server};
-  \draw ( -2, -3) rectangle (  2, -5);
+  \node[align=center] at (-18, -7) {Client};
+  \draw (-19, -8) rectangle (-17, -6);
 
-  \node[align=center] at (  0, -6) {Database};
+  % Server nodes
 
-  \node[align=center] at (  5, -4) {Server};
-  \draw (  3, -3) rectangle (  7, -5);
+  \node[above right] at (-13, 9) {Server};
+  \draw (-13, 5) rectangle (19, 9);
 
-  \node[align=center] at (  5, -6) {Database};
+  \node[above right] at (-13, 2) {Server};
+  \draw (-13, -2) rectangle (19, 2);
 
-  \node[align=center] at ( 10, -4) {Server};
-  \draw (  8, -3) rectangle ( 12, -5);
+  \node[above right] at (-13, -5) {Server};
+  \draw (-13, -9) rectangle (19, -5);
 
-  \node[align=center] at ( 10, -6) {Database};
+  % Replica processes
 
-
-  % % AWS Architecture
-  % \draw (-1, -1) rectangle (11, 11);
-  % \draw (0, 0) rectangle (4, 4);
-  % \draw (6, 0) rectangle (10, 4);
-  % \draw (3, 6) rectangle (7, 10);
-  % \draw[dashed, very thick, green] (4.75, 10.5) -- (8.75, 14);
-  % \draw[dashed, very thick, green] (5.25, 10.5) -- (9.25, 14);
-  % \draw[dashed, very thick, green] (7.5, 8.25) -- (13, 5.25);
-  % \draw[dashed, very thick, green] (7.5, 7.75) -- (13, 4.75);
-  %
-  % % Ethereum
-  % \draw (12, -1) rectangle (18, 11);
-  % \draw (13.5,  3.5) rectangle (16.5, 6.5);
-  %
-  % % Front-end services
-  % \draw (7, 13) rectangle (11, 17);
-  % \draw[dashed, very thick, green] (8.75, 14) -- (14.75, 7);
-  % \draw[dashed, very thick, green] (9.25, 14) -- (15.25, 7);
-  %
-  % \node[align=center] at (2, 2) { RDS\\SQL-based DB };
-  % \node[align=center] at (8, 2) { S3\\Distributed File\\System };
-  % \node[align=center] at (5, 8) { EB\\Scalable API };
-  %
-  % \node[align=center] at (9, 15) { Multiple\\front-end clients };
-  %
-  % \node[align=center] at (15, 5) { Public\\Ethereum\\Cluster };
+  \node[align=center] at (-11, 0) {Replica};
 
   \end{tikzpicture}
+  \end{scaletikzpicturetowidth}
   \caption{
-    System structure representation using client, database, replica, server, and system modules.
+    System structure representation using client, database, replica, server, and system modules. System shows use with 3 clients, and 3 servers, and is expanded as such.
   }
 \end{figure}
 
