@@ -15,4 +15,6 @@ start(System, N_accounts, End_after) ->
 
   System ! {config, Replica, Acceptor, Leader},
 
+  % Process exits
+
   done.
