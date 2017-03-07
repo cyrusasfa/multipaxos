@@ -8,14 +8,14 @@ start() ->
 
 next(Ballot, Accepted) ->
   receive
-    { Leader, BallotN } ->
+    { scout2acceptor, Leader, BallotN } ->
       case (BallotN > Ballot) of
         true  -> BallotR = BallotN ;
         false -> BallotR = Ballot
       end,
-      Leader ! { self(), BallotR, Accepted },
+      Leader ! { acceptor2scout, self(), BallotR, Accepted },
       next(BallotR, Accepted) ;
-    { Leader, BallotN, SlotN, Cmd } ->
+    { commander2acceptor, Leader, BallotN, SlotN, Cmd } ->
       case (BallotN == Ballot) of
         true  ->
           AValue = { BallotN, SlotN, Cmd },
@@ -23,6 +23,6 @@ next(Ballot, Accepted) ->
         false ->
           AcceptedN = Accepted
       end,
-      Leader ! { self(), Ballot, SlotN },
+      Leader ! { acceptor2commander, self(), Ballot, SlotN },
       next(Ballot, AcceptedN)
   end.
