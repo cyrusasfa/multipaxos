@@ -12,18 +12,27 @@ start(Database) ->
 next(Database, Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
   receive
     { request, Cmd } ->
-      RequestsO = sets:add_element(Cmd, Requests) ;
+      RequestsO = sets:add_element(Cmd, Requests),
+      next(Database, Leaders, SlotIn, SlotOut, RequestsO, Proposals, Decisions);
     { decision, Slot, Cmd } ->
       DecisionsO = maps:put(Slot, Cmd, Decisions),
-      { RequestsO, ProposalsO } =
-        decide(SlotOut, Cmd, Requests, Proposals, DecisionsO)
+      { RequestsO, ProposalsO, SlotOutO } =
+        decide(SlotOut, Requests, Proposals, DecisionsO, Database),
+      next(Database, Leaders, SlotIn, SlotOutO, RequestsO, ProposalsO, DecisionsO)
+  after 0 ->
+    { SlotInO, RequestsO, ProposalsO } = propose(
+      Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions
+    ),
+    next(Database, Leaders, SlotInO, SlotOut, RequestsO, ProposalsO, Decisions)
+  end.
 
-  end,
-  done.
+propose(Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
+  { SlotIn, Requests, Proposals }.
 
-decide(SlotOut, Cmd, Requests, Proposals, Decisions) ->
+decide(SlotOut, Requests, Proposals, Decisions, Database) ->
   case maps:is_key(SlotOut, Decisions) of
     true  ->
+      Cmd = maps:get(SlotOut, Decisions),
       RequestsO = sets:union(Requests, sets:from_list([
         C || { Slot, C } <- Proposals,
         Slot == SlotOut, C /= Cmd
@@ -31,13 +40,16 @@ decide(SlotOut, Cmd, Requests, Proposals, Decisions) ->
       ProposalsO = Proposals -- sets:from_list([
         { Slot, C } || { Slot, C } <- Proposals,
         Slot == SlotOut
-      ])
-      % perform(Cmd, ),
-      ;
-    false -> { Requests, Proposals }
+      ]),
+      decide(
+        perform(SlotOut, Cmd, Database),
+        RequestsO, ProposalsO, map:remove(SlotOut, Decisions),
+        Database
+      );
+    false -> { Requests, Proposals, SlotOut }
   end.
 
-% perform(...) ->
-%   ...
-%       Database ! {execute, Op},
-%       Client ! {response, Cid, ok}
+perform(SlotOut, { Client, Cid, Op }, Database) ->
+    Database ! { execute, Op },
+    Client ! { response, Cid, ok},
+    SlotOut + 1.
