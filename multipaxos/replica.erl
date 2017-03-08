@@ -28,7 +28,7 @@ next(Database, Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
 
 propose(Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
   Window = 5,
-  case (SlotIn < SlotOut + Window and sets:size(Requests) > 0) of
+  case (SlotIn < SlotOut + Window andalso sets:size(Requests) > 0) of
     true ->
       case not maps:iskey(SlotIn, Decisions) of
         true ->
@@ -39,7 +39,7 @@ propose(Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
       end,
       propose(Leaders, SlotIn + 1, SlotOut, RequestsO, ProposalsO, Decisions) ;
     false ->
-      { SlotIn, Requests, Proposals }.
+      { SlotIn, Requests, Proposals }
   end.
 
 decide(SlotOut, Requests, Proposals, Decisions, Database) ->
