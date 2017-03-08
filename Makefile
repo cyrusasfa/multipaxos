@@ -3,7 +3,7 @@ BEAM_DIR = multipaxos/ebin
 MODULES = $(patsubst %.erl,%,$(shell ls $(SRC_DIR)/*.erl))
 
 ERLC = erlc -o $(BEAM_DIR)
-ERL = erl -noshell -pa ebin -setcookie pass
+ERL = erl -noshell -pa $(BEAM_DIR) -setcookie pass
 
 # ------------------------------------------------------------------------------
 
@@ -32,4 +32,4 @@ clean:
 # ------------------------------------------------------------------------------
 
 system:
-	cd $(SRC_DIR) && $(ERL) -s system start
+	$(ERL) -s system start

@@ -4,7 +4,7 @@
 -export([start/0]).
 
 start() ->
-  N_servers  = 2,
+  N_servers  = 5,
   N_clients  = 3,
   N_accounts = 10,
   Max_amount = 1000,

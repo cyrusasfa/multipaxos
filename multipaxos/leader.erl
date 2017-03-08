@@ -24,15 +24,14 @@ next(Active, Ballot, Proposals, Acceptors, Replicas) ->
                     [self(), Acceptors, Replicas, Ballot, Slot, Cmd]) ;
             false ->
               ok
-          end,
-          next(Active, Ballot, ProposalsO, Acceptors, Replicas) ;
+          end;
         false ->
-          ok
-      end ;
+          ProposalsO = Proposals
+      end,
+      next(Active, Ballot, ProposalsO, Acceptors, Replicas);
     { adopted, Ballot, Accepted } ->
-      ProposalsO = sets:union(
-        sets:from_list(maps:to_list(Proposals)), pValueMax(Accepted)
-      ),
+      ProposalsO = sets:union(sets:from_list(maps:to_list(Proposals)),
+                              pValueMax(Accepted)),
       [ spawn(commander, start,
               [ self(), Acceptors, Replicas, Ballot, Slot, Cmd ]) ||
         { Slot, Cmd } <- sets:to_list(ProposalsO) ],
@@ -43,7 +42,7 @@ next(Active, Ballot, Proposals, Acceptors, Replicas) ->
         true  ->
           ActiveO = false,
           BallotO = { Round + 1, self() },
-          spawn(scout, start, [ self(), Acceptors, BallotO ]) ;
+          spawn(scout, start, [self(), Acceptors, BallotO]) ;
         false ->
           ActiveO = Active,
           BallotO = Ballot

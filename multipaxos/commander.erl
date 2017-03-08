@@ -14,7 +14,6 @@ start(Leader, Acceptors, Replicas, Ballot, Slot, Cmd) ->
 next(Leader, Replicas, Ballot, Slot, Cmd, WaitFor, Size) ->
   receive
     { phase2, response, PID, BallotI } ->
-      io:format('PHASE 2 RESPONSE~n'),
       case (BallotI == Ballot andalso sets:is_element(PID, WaitFor)) of
         true  ->
           WaitForO  = sets:del_element(PID, WaitFor),

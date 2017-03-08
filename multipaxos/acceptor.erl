@@ -31,8 +31,7 @@ next(Ballot, Accepted) ->
           AcceptedO = Accepted
       end,
       Commander ! { phase2, response, self(), Ballot },
-      BallotO = Ballot,
-      next(BallotO, AcceptedO) ;
+      next(Ballot, AcceptedO) ;
     { finish } ->
       done
   end.
