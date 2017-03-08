@@ -5,12 +5,12 @@
 
 start(Leader, Acceptors, Replicas, Ballot, Slot, Cmd) ->
   WaitFor = sets:from_list(Acceptors),
-  [ P ! { commander2acceptor, self(), Ballot, Slot, Cmd } || P <- WaitFor ],
+  [ P ! { phase2, request, self(), Ballot, Slot, Cmd } || P <- WaitFor ],
   next(Leader, Replicas, Ballot, Slot, Cmd, WaitFor, sets:size(WaitFor)).
 
 next(Leader, Replicas, Ballot, Slot, Cmd, WaitFor, Size) ->
   receive
-    { acceptor2commander, PID, Ballot, Slot, Cmd } ->
+    { phase2, response, PID, Ballot, Slot, Cmd } ->
       case (sets:is_element(PID, WaitFor)) of
         true  ->
           WaitForN  = sets:remove_element(PID),

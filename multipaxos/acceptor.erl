@@ -6,23 +6,26 @@
 start() ->
   next(undefined, sets:new()).
 
+% Ballot = { Round, Leader }
+% PValue = { Ballot, Slot, Cmd }
+% Accepted = [ PValue ]
 next(Ballot, Accepted) ->
   receive
-    { scout2acceptor, Leader, BallotN } ->
-      case (BallotN > Ballot) of
-        true  -> BallotR = BallotN ;
-        false -> BallotR = Ballot
+    { phase1, request, Scout, BallotI} ->
+      case (BallotI> Ballot) of
+        true  -> BallotO = BallotI;
+        false -> BallotO = Ballot
       end,
-      Leader ! { acceptor2scout, self(), BallotR, Accepted },
-      AcceptedN = Accepted ;
-    { commander2acceptor, Leader, BallotN, SlotN, Cmd } ->
-      case (BallotN == Ballot) of
+      Scout ! { phase1, response, self(), BallotO, Accepted },
+      AcceptedO = Accepted ;
+    { phase2, request, Commander, BallotI, SlotI, Cmd } ->
+      case (BallotI == Ballot) of
         true  ->
-          AcceptedN = sets:add_element({ BallotN, SlotN, Cmd }, Accepted) ;
+          AcceptedO = sets:add_element({ BallotI, SlotI, Cmd }, Accepted) ;
         false ->
-          AcceptedN = Accepted
+          AcceptedO = Accepted
       end,
-      Leader ! { acceptor2commander, self(), Ballot, SlotN },
-      BallotR = Ballot
+      Commander ! { phase2, response, self(), Ballot, SlotI },
+      BallotO = Ballot
   end,
-  next(BallotR, AcceptedN).
+  next(BallotO, AcceptedO).

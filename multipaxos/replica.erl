@@ -4,11 +4,13 @@
 -export([start/1]).
 
 start(Database) ->
-  io:format('REPLICA').
-  % receive
-  %   {bind, Leaders} ->
-  %      next(...)
-  % end.
+  receive
+    {bind, Leaders} ->
+       next(Database, Leaders)
+  end.
+
+next(Database, Leaders) ->
+  io:format("~p~n~p~n", [Database, Leaders]).
 
 % next(...) ->
 %   receive
