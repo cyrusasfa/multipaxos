@@ -14,15 +14,15 @@ next(Ballot, Accepted) ->
         false -> BallotR = Ballot
       end,
       Leader ! { acceptor2scout, self(), BallotR, Accepted },
-      next(BallotR, Accepted) ;
+      AcceptedN = Accepted ;
     { commander2acceptor, Leader, BallotN, SlotN, Cmd } ->
       case (BallotN == Ballot) of
         true  ->
-          AValue = { BallotN, SlotN, Cmd },
-          AcceptedN = sets:add_element(AValue, Accepted) ;
+          AcceptedN = sets:add_element({ BallotN, SlotN, Cmd }, Accepted) ;
         false ->
           AcceptedN = Accepted
       end,
       Leader ! { acceptor2commander, self(), Ballot, SlotN },
-      next(Ballot, AcceptedN)
-  end.
+      BallotR = Ballot
+  end,
+  next(BallotR, AcceptedN).
