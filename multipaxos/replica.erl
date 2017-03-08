@@ -1,12 +1,13 @@
 %%% Frederick Lindsey (fl1414) and Cyrus Vahidi (cv114)
 
 -module(replica).
--export([start/1]).
+-export([start/2]).
 
-start(Database) ->
+start(Database, End_after) ->
   receive
-    {bind, Leaders} ->
-       next(Database, Leaders, 1, 1, sets:new(), sets:new(), maps:new())
+    { bind, Leaders } ->
+      timer:send_after(End_after, { finish }),
+      next(Database, Leaders, 1, 1, sets:new(), sets:new(), maps:new())
   end.
 
 next(Database, Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
@@ -30,12 +31,12 @@ propose(Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
   Window = 5,
   case (SlotIn < SlotOut + Window andalso sets:size(Requests) > 0) of
     true ->
-      case not maps:iskey(SlotIn, Decisions) of
+      case not maps:is_key(SlotIn, Decisions) of
         true ->
           [ Cmd | Rest ] = sets:to_list(Requests),
           RequestsO = sets:from_list(Rest),
           ProposalsO = sets:add_element({ SlotIn, Cmd }, Proposals),
-          [ L ! { propose, SlotIn, Cmd }  || L <- Leaders ]
+          [ L ! { propose, SlotIn, Cmd }  || L <- sets:to_list(Leaders) ]
       end,
       propose(Leaders, SlotIn + 1, SlotOut, RequestsO, ProposalsO, Decisions) ;
     false ->
@@ -47,22 +48,22 @@ decide(SlotOut, Requests, Proposals, Decisions, Database) ->
     true  ->
       Cmd = maps:get(SlotOut, Decisions),
       RequestsO = sets:union(Requests, sets:from_list([
-        C || { Slot, C } <- Proposals,
+        C || { Slot, C } <- sets:to_list(Proposals),
         Slot == SlotOut, C /= Cmd
       ])),
-      ProposalsO = Proposals -- sets:from_list([
-        { Slot, C } || { Slot, C } <- Proposals,
+      ProposalsO = sets:subtract(Proposals, sets:from_list([
+        { Slot, C } || { Slot, C } <- sets:to_list(Proposals),
         Slot == SlotOut
-      ]),
+      ])),
       decide(
         perform(SlotOut, Cmd, Database),
-        RequestsO, ProposalsO, map:remove(SlotOut, Decisions),
+        RequestsO, ProposalsO, maps:remove(SlotOut, Decisions),
         Database
       );
     false -> { Requests, Proposals, SlotOut }
   end.
 
 perform(SlotOut, { Client, Cid, Op }, Database) ->
-    Database ! { execute, Op },
-    Client ! { response, Cid, ok},
-    SlotOut + 1.
+  Database ! { execute, Op },
+  Client ! { response, Cid, ok },
+  SlotOut + 1.

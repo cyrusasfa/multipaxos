@@ -4,9 +4,8 @@
 -export([start/3]).
 
 start(Leader, Acceptors, Ballot) ->
-  WaitFor = sets:from_list(Acceptors),
-  [ P ! { phase1, request, self(), Ballot } || P <- WaitFor ],
-  next(Leader, Ballot, WaitFor, sets:new(), sets:size(WaitFor)).
+  [ P ! { phase1, request, self(), Ballot } || P <- sets:to_list(Acceptors) ],
+  next(Leader, Ballot, Acceptors, sets:new(), sets:size(Acceptors)).
 
 % Ballot = { Round, Leader }
 % PValue = { Ballot, Slot, Cmd }
@@ -18,7 +17,7 @@ next(Leader, Ballot, WaitFor, Accepted, Size) ->
       case (BallotI == Ballot andalso sets:is_element(Acceptor, WaitFor)) of
         true  ->
           AcceptedO = sets:union(AcceptedAcceptor, Accepted),
-          WaitForO  = sets:remove_element(Acceptor),
+          WaitForO  = sets:del_element(Acceptor, WaitFor),
           case (sets:size(WaitForO) < (Size / 2)) of
             true  -> Leader ! { adopted, Ballot, Accepted } ;
             false -> next(Leader, Ballot, WaitForO, AcceptedO, Size)

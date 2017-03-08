@@ -5,7 +5,7 @@
 
 start(N_accounts, End_after) ->
   % add extra time for completion of all updates
-  timer:send_after(End_after + 1000, finish),
+  timer:send_after(End_after + 1000, { finish }),
 
   % set all Balances to zero
   Balances = maps:from_list([ { N, 0 } || N <- lists:seq(1, N_accounts) ]),
@@ -15,9 +15,8 @@ start(N_accounts, End_after) ->
   Output = [ io_lib:format("~3w | ~6w | ~p ~n",
                       [N, maps:get(N, Balances2), self()])
              || N <- lists:seq(1, N_accounts) ],
-  io:format("Transactions ~p~n~s~n", [Transactions, lists:flatten(Output)]),
 
-  done.
+  io:format("Transactions ~p~n~s~n", [Transactions, lists:flatten(Output)]).
 
 next(Balances, Transactions) ->
   receive
@@ -26,7 +25,7 @@ next(Balances, Transactions) ->
     Balances2  = Balances#{ Account1 := Increment1 },
     Decrement2 = maps:get(Account2, Balances2) - Amount,
     Balances3  = Balances2#{ Account2 := Decrement2 },
-    next(Balances3, Transactions+1);
-  finish ->
-    {Balances, Transactions}
+    next(Balances3, Transactions + 1) ;
+  { finish } ->
+    { Balances, Transactions }
   end.

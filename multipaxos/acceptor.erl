@@ -1,9 +1,10 @@
 %%% Frederick Lindsey (fl1414) and Cyrus Vahidi (cv114)
 
 -module(acceptor).
--export([start/0]).
+-export([start/1]).
 
-start() ->
+start(End_after) ->
+  timer:send_after(End_after, { finish }),
   next(undefined, sets:new()).
 
 % Ballot = { Round, Leader }
@@ -18,7 +19,8 @@ next(Ballot, Accepted) ->
         false -> BallotO = Ballot
       end,
       Scout ! { phase1, response, self(), BallotO, Accepted },
-      AcceptedO = Accepted ;
+      AcceptedO = Accepted,
+      next(BallotO, AcceptedO) ;
 
     % Adopt a pvalue
     { phase2, request, Commander, BallotI, SlotI, Cmd } ->
@@ -28,7 +30,9 @@ next(Ballot, Accepted) ->
         false ->
           AcceptedO = Accepted
       end,
-      Commander ! { phase2, response, self(), Ballot, SlotI },
-      BallotO = Ballot
-  end,
-  next(BallotO, AcceptedO).
+      Commander ! { phase2, response, self(), Ballot },
+      BallotO = Ballot,
+      next(BallotO, AcceptedO) ;
+    { finish } ->
+      done
+  end.

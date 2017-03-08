@@ -13,7 +13,6 @@ part_1:
 	latexmk -pdf part_1.tex
 
 part_2: erl system
-	@echo $^
 
 erl: ebin ${MODULES:%=%.beam}
 

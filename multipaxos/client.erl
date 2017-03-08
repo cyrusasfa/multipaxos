@@ -4,7 +4,7 @@
 -export([start/4]).
 
 start(Replicas, N_accounts, Max_amount, End_after) ->
-  timer:send_after(End_after, finish),
+  timer:send_after(End_after, { finish }),
   next(Replicas, N_accounts, Max_amount, 0).
 
 next(Replicas, N_accounts, Max_amount, Cid) ->
@@ -18,21 +18,24 @@ next(Replicas, N_accounts, Max_amount, Cid) ->
   Account1 = rand:uniform(N_accounts),
   Account2 = rand:uniform(N_accounts),
   Amount   = rand:uniform(Max_amount),
-  Op   = {move, Amount, Account1, Account2},
+  Op   = { move, Amount, Account1, Account2 },
   Cid2 = Cid + 1,
-  Cmd  = {self(), Cid2, Op},
+  Cmd  = { self(), Cid2, Op },
 
-  [ Replica ! {request, Cmd} || Replica <- Replicas ],
+  [ Replica ! { request, Cmd } || Replica <- sets:to_list(Replicas) ],
 
   ignore_responses(),
 
   receive
-    finish  -> finish
-    after 0 -> next(Replicas, N_accounts, Max_amount, Cid2)
+    { finish }  ->
+      done
+  after 0 ->
+    next(Replicas, N_accounts, Max_amount, Cid2)
   end.
 
 ignore_responses() ->
   receive
-    {response, _Result} -> ignore_responses()
-    after 0 -> return
+    _ -> ignore_responses()
+  after 0 ->
+    done
   end.

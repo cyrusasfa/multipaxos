@@ -1,11 +1,12 @@
 %%% Frederick Lindsey (fl1414) and Cyrus Vahidi (cv114)
 
 -module(leader).
--export([start/0]).
+-export([start/1]).
 
-start() ->
+start(End_after) ->
   receive
     { bind, Acceptors, Replicas } ->
+      timer:send_after(End_after, { finish }),
       BallotInitial = { 0, self() },
       spawn(scout, start, [self(), Acceptors, BallotInitial]),
       next(false, BallotInitial, maps:new(), Acceptors, Replicas)
@@ -14,22 +15,29 @@ start() ->
 next(Active, Ballot, Proposals, Acceptors, Replicas) ->
   receive
     { propose, Slot, Cmd } ->
-      case maps:is_key(Slot, Proposals) of
-        false ->
+      case not maps:is_key(Slot, Proposals) of
+        true ->
           ProposalsO = maps:put(Slot, Cmd, Proposals),
           case Active of
-            true  ->
+            true ->
               spawn(commander, start,
-                    [self(), Acceptors, Replicas, Ballot, Slot, Cmd])
+                    [self(), Acceptors, Replicas, Ballot, Slot, Cmd]) ;
+            false ->
+              ok
           end,
-          next(Active, Ballot, ProposalsO, Acceptors, Replicas)
+          next(Active, Ballot, ProposalsO, Acceptors, Replicas) ;
+        false ->
+          ok
       end ;
     { adopted, Ballot, Accepted } ->
-      ProposalsO = triangle(Proposals, pmax(Accepted)),
+      ProposalsO = sets:union(
+        sets:from_list(maps:to_list(Proposals)), pValueMax(Accepted)
+      ),
       [ spawn(commander, start,
               [ self(), Acceptors, Replicas, Ballot, Slot, Cmd ]) ||
-        { Slot, Cmd } <- ProposalsO ],
-      next(true, Ballot, ProposalsO, Acceptors, Replicas) ;
+        { Slot, Cmd } <- sets:to_list(ProposalsO) ],
+      next(true, Ballot, maps:from_list(sets:to_list(ProposalsO)),
+           Acceptors, Replicas) ;
     { preempted, { Round, Leader } } ->
       case { Round, Leader } > Ballot of
         true  ->
@@ -40,20 +48,20 @@ next(Active, Ballot, Proposals, Acceptors, Replicas) ->
           ActiveO = Active,
           BallotO = Ballot
       end,
-      next(ActiveO, BallotO, Proposals, Acceptors, Replicas)
+      next(ActiveO, BallotO, Proposals, Acceptors, Replicas) ;
+    { finish } ->
+      done
   end.
 
-triangle(ProposalsX, ProposalsY) ->
-  sets:union(ProposalsY, ProposalsX -- ProposalsY).
-
-pmax(Accepted) ->
-  [ { S, C } ||
-    { B, S, C } <- Accepted,
+pValueMax(Accepted) ->
+  AcceptedList = sets:to_list(Accepted),
+  sets:from_list([ { S, C } ||
+    { B, S, C } <- AcceptedList,
     length([
       1 ||
-      { B_, S_, C_ } <- Accepted,
+      { B_, S_, C_ } <- AcceptedList,
       B_ > B,
       S_ == S,
       C_ /= C
     ]) == 0
-  ].
+  ]).

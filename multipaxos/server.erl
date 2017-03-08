@@ -5,15 +5,15 @@
 
 start(System, N_accounts, End_after) ->
 
-  Database = spawn(database, start, [N_accounts, End_after]),
+  Database = spawn(database, start, [ N_accounts, End_after ]),
 
-  Replica = spawn(replica, start, [Database]),
+  Replica = spawn(replica, start, [ Database, End_after ]),
 
-  Leader = spawn(leader, start, []),
+  Leader = spawn(leader, start, [ End_after ]),
 
-  Acceptor = spawn(acceptor, start, []),
+  Acceptor = spawn(acceptor, start, [ End_after ]),
 
-  System ! {config, Replica, Acceptor, Leader},
+  System ! { config, Replica, Acceptor, Leader },
 
   % Process exits
 
