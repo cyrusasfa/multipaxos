@@ -16,7 +16,7 @@ next(Leader, Replicas, Ballot, Slot, Cmd, WaitFor, Size) ->
     { phase2, response, PID, BallotI, Slot, Cmd } ->
       case (BallotI == Ballot andalso sets:is_element(PID, WaitFor)) of
         true  ->
-          WaitForO  = sets:remove_element(PID),
+          WaitForO  = sets:remove_element(PID, WaitFor),
           case (sets:size(WaitForO) < (Size / 2)) of
             true  -> [ R ! { decision, self(), Slot, Cmd } || R <- Replicas ];
             false -> next(Leader, Replicas, Ballot, Slot, Cmd, WaitForO, Size)
