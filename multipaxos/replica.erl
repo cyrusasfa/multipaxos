@@ -27,7 +27,20 @@ next(Database, Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
   end.
 
 propose(Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
-  { SlotIn, Requests, Proposals }.
+  Window = 5,
+  case (SlotIn < SlotOut + Window and sets:size(Requests) > 0) of
+    true ->
+      case not maps:iskey(SlotIn, Decisions) of
+        true ->
+          [ Cmd | Rest ] = sets:to_list(Requests),
+          RequestsO = sets:from_list(Rest),
+          ProposalsO = sets:add_element({ SlotIn, Cmd }, Proposals),
+          [ L ! { propose, SlotIn, Cmd }  || L <- Leaders ]
+      end,
+      propose(Leaders, SlotIn + 1, SlotOut, RequestsO, ProposalsO, Decisions) ;
+    false ->
+      { SlotIn, Requests, Proposals }.
+  end.
 
 decide(SlotOut, Requests, Proposals, Decisions, Database) ->
   case maps:is_key(SlotOut, Decisions) of
