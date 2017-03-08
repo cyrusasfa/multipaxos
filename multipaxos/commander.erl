@@ -14,6 +14,7 @@ start(Leader, Acceptors, Replicas, Ballot, Slot, Cmd) ->
 next(Leader, Replicas, Ballot, Slot, Cmd, WaitFor, Size) ->
   receive
     { phase2, response, PID, BallotI } ->
+      io:format('PHASE 2 RESPONSE~n'),
       case (BallotI == Ballot andalso sets:is_element(PID, WaitFor)) of
         true  ->
           WaitForO  = sets:del_element(PID, WaitFor),
@@ -22,7 +23,7 @@ next(Leader, Replicas, Ballot, Slot, Cmd, WaitFor, Size) ->
             false -> next(Leader, Replicas, Ballot, Slot, Cmd, WaitForO, Size)
           end ;
         false ->
-          Leader ! { preempted, self(), Ballot }
+          Leader ! { preempted, Ballot }
       end
   end,
   done.
