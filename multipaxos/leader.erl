@@ -26,7 +26,6 @@ next(Active, Ballot, Proposals, Acceptors, Replicas) ->
       end ;
     { adopted, Ballot, Accepted } ->
       ProposalsO = triangle(Proposals, pmax(Accepted)),
-      % Commands = accumulate_proposals(Accepted, maps:new(), maps:new()),
       [ spawn(commander, start,
               [ self(), Acceptors, Replicas, Ballot, Slot, Cmd ]) ||
         { Slot, Cmd } <- ProposalsO ],

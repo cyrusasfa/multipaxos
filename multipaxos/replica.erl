@@ -6,32 +6,37 @@
 start(Database) ->
   receive
     {bind, Leaders} ->
-       next(Database, Leaders)
+       next(Database, Leaders, 1, 1, sets:new(), sets:new(), maps:new())
   end.
 
-next(Database, Leaders) ->
-  io:format("~p~n~p~n", [Database, Leaders]).
+next(Database, Leaders, SlotIn, SlotOut, Requests, Proposals, Decisions) ->
+  receive
+    { request, Cmd } ->
+      RequestsO = sets:add_element(Cmd, Requests) ;
+    { decision, Slot, Cmd } ->
+      DecisionsO = maps:put(Slot, Cmd, Decisions),
+      { RequestsO, ProposalsO } =
+        decide(SlotOut, Cmd, Requests, Proposals, DecisionsO)
 
-% next(...) ->
-%   receive
-%     {request, C} ->      % request from client
-%       ...
-%     {decision, S, C} ->  % decision from commander
-%       ... = decide (...)
-%   end, % receive
-%
-%   ... = propose(...),
-%   ...
-%
-% propose(...) ->
-%   WINDOW = 5,
-%   ...
-%
-% decide(...) ->
-%   ...
-%        perform(...),
-%   ...
-%
+  end,
+  done.
+
+decide(SlotOut, Cmd, Requests, Proposals, Decisions) ->
+  case maps:is_key(SlotOut, Decisions) of
+    true  ->
+      RequestsO = sets:union(Requests, sets:from_list([
+        C || { Slot, C } <- Proposals,
+        Slot == SlotOut, C /= Cmd
+      ])),
+      ProposalsO = Proposals -- sets:from_list([
+        { Slot, C } || { Slot, C } <- Proposals,
+        Slot == SlotOut
+      ])
+      % perform(Cmd, ),
+      ;
+    false -> { Requests, Proposals }
+  end.
+
 % perform(...) ->
 %   ...
 %       Database ! {execute, Op},
