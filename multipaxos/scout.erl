@@ -14,17 +14,17 @@ start(Leader, Acceptors, Ballot) ->
 % WaitFor = [ PID ]
 next(Leader, Ballot, WaitFor, Accepted, Size) ->
   receive
-    { phase1, response, PID, BallotN, PValue } ->
-      case (BallotN == Ballot andalso sets:is_element(PID, WaitFor)) of
+    { phase1, response, Acceptor, BallotI, AcceptedAcceptor } ->
+      case (BallotI == Ballot andalso sets:is_element(Acceptor, WaitFor)) of
         true  ->
-          AcceptedN = sets:add_element(PValue, Accepted),
-          WaitForN  = sets:remove_element(PID),
-          case (sets:size(WaitForN) < (Size / 2)) of
-            true  -> Leader ! { adopted, self(), Ballot, Accepted } ;
-            false -> next(Leader, Ballot, WaitForN, AcceptedN, Size)
+          AcceptedO = sets:union(AcceptedAcceptor, Accepted),
+          WaitForO  = sets:remove_element(Acceptor),
+          case (sets:size(WaitForO) < (Size / 2)) of
+            true  -> Leader ! { adopted, Ballot, Accepted } ;
+            false -> next(Leader, Ballot, WaitForO, AcceptedO, Size)
           end ;
         false ->
-          Leader ! { preempted, self(), BallotN }
+          Leader ! { preempted, BallotI }
       end
   end,
   done.
