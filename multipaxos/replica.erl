@@ -54,7 +54,7 @@ decide(SlotOut, Requests, Proposals, Decisions, Database) ->
         C || { Slot, C } <- maps:to_list(Proposals),
         Slot == SlotOut, C /= Cmd
       ])),
-      ProposalsO = maps:remove(SlotOut, Proposals),
+
       decide(
         perform(SlotOut, Cmd, Decisions, Database),
         RequestsO, ProposalsO, maps:remove(SlotOut, Decisions),
